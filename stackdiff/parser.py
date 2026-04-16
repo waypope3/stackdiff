@@ -29,7 +29,10 @@ def load_stack(path: str | Path) -> dict[str, Any]:
     if not path.exists():
         raise StackParseError(f"File not found: {path}")
 
-    raw = path.read_text(encoding="utf-8")
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise StackParseError(f"Could not read {path}: {exc}") from exc
 
     try:
         if path.suffix in (".yaml", ".yml"):
