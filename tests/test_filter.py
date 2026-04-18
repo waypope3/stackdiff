@@ -55,6 +55,17 @@ def test_include_no_match_returns_empty():
     assert result == {}
 
 
+def test_exclude_all_returns_empty():
+    result = filter_keys(STACK, exclude=["*"])
+    assert result == {}
+
+
+def test_include_and_exclude_same_pattern_returns_empty():
+    # including then excluding the same glob should yield nothing
+    result = filter_keys(STACK, include=["Db*"], exclude=["Db*"])
+    assert result == {}
+
+
 def test_apply_filters_symmetric():
     baseline = {"AppVersion": "1.0", "DbHost": "db1"}
     target = {"AppVersion": "2.0", "DbHost": "db2"}
