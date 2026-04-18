@@ -51,6 +51,15 @@ def test_all_added():
     assert s.change_rate == 1.0
 
 
+def test_all_removed():
+    diffs = [KeyDiff(key=k, baseline="v", target=None) for k in "xyz"]
+    s = compute_stats(diffs)
+    assert s.removed == 3
+    assert s.added == 0
+    assert s.changed == 0
+    assert s.change_rate == 1.0
+
+
 def test_as_dict_keys(mixed_diffs):
     d = compute_stats(mixed_diffs).as_dict()
     assert set(d.keys()) == {"total", "changed", "added", "removed", "unchanged", "change_rate"}
