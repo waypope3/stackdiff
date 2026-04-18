@@ -45,6 +45,14 @@ def test_empty_string_unchanged():
     assert truncate_value("") == ""
 
 
+def test_truncated_prefix_contains_original_content():
+    """Ensure the kept prefix is actually from the original string."""
+    s = "abcdefghij"
+    result = truncate_value(s, max_length=6)
+    # First 3 chars should be the original content, last 3 are ellipsis
+    assert result == "abc..."
+
+
 # ---------------------------------------------------------------------------
 # truncate_diff
 # ---------------------------------------------------------------------------
@@ -85,3 +93,10 @@ def test_original_diff_not_mutated(sample_diff):
     original_val = sample_diff["KeyB"]["baseline"]
     truncate_diff(sample_diff, max_length=50)
     assert sample_diff["KeyB"]["baseline"] == original_val
+
+
+def test_truncate_diff_returns_new_dict(sample_diff):
+    """truncate_diff should return a new dict, not the original."""
+    result = truncate_diff(sample_diff, max_length=50)
+    assert result is not sample_diff
+    assert result["KeyA"] is not sample_diff["KeyA"]
