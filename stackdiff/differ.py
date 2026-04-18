@@ -1,49 +1,48 @@
-"""Diff logic for comparing two stack output dictionaries."""
+"""Core diffing logic for stackdiff."""
+from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+from dataclasses import dataclass
+from typing import Dict, Optional
 
 
 @dataclass
-class DiffResult:
-    added: dict[str, Any] = field(default_factory=dict)
-    removed: dict[str, Any] = field(default_factory=dict)
-    changed: dict[str, tuple[Any, Any]] = field(default_factory=dict)
-    unchanged: dict[str, Any] = field(default_factory=dict)
-
-    @property
-    def has_diff(self) -> bool:
-        return bool(self.added or self.removed or self.changed)
-
-    def summary(self) -> str:
-        parts = []
-        if self.added:
-            parts.append(f"+{len(self.added)} added")
-        if self.removed:
-            parts.append(f"-{len(self.removed)} removed")
-        if self.changed:
-            parts.append(f"~{len(self.changed)} changed")
-        if not parts:
-            return "No differences found."
-        return ", ".join(parts)
+class KeyDiff:
+    baseline: Optional[str]
+    target: Optional[str]
+    status: str  # 'changed' | 'unchanged' | 'added' | 'removed'
 
 
-def diff_stacks(base: dict[str, Any], target: dict[str, Any]) -> DiffResult:
-    """Compare two flat stack output dicts and return a DiffResult."""
-    result = DiffResult()
-    all_keys = set(base) | set(target)
+# DiffResult maps output key -> KeyDiff
+DiffResult = Dict[str, KeyDiff]
 
+
+def has_diff(result: DiffResult) -> bool:
+    """Return True if any key has a non-unchanged status."""
+    return any(v.status != "unchanged" for v in result.values())
+
+
+def summary(result: DiffResult) -> dict:
+    """Return counts by status."""
+    counts: dict = {"changed": 0, "added": 0, "removed": 0, "unchanged": 0}
+    for v in result.values():
+        counts[v.status] = counts.get(v.status, 0) + 1
+    return counts
+
+
+def diff_stacks(baseline: dict, target: dict) -> DiffResult:
+    """Produce a DiffResult comparing two flat output dicts."""
+    result: DiffResult = {}
+    all_keys = set(baseline) | set(target)
     for key in all_keys:
-        in_base = key in base
-        in_target = key in target
-
-        if in_base and not in_target:
-            result.removed[key] = base[key]
-        elif in_target and not in_base:
-            result.added[key] = target[key]
-        elif base[key] != target[key]:
-            result.changed[key] = (base[key], target[key])
+        b_val = baseline.get(key)
+        t_val = target.get(key)
+        if key not in baseline:
+            status = "added"
+        elif key not in target:
+            status = "removed"
+        elif b_val != t_val:
+            status = "changed"
         else:
-            result.unchanged[key] = base[key]
-
+            status = "unchanged"
+        result[key] = KeyDiff(baseline=b_val, target=t_val, status=status)
     return result
