@@ -1,0 +1,68 @@
+"""Simple file-based cache for resolved stack sources."""
+
+import hashlib
+import json
+import os
+import time
+from pathlib import Path
+from typing import Optional
+
+DEFAULT_CACHE_DIR = Path.home() / ".cache" / "stackdiff"
+DEFAULT_TTL = 300  # seconds
+
+
+class CacheError(Exception):
+    pass
+
+
+def _cache_key(uri: str) -> str:
+    return hashlib.sha256(uri.encode()).hexdigest()
+
+
+def _cache_path(cache_dir: Path, uri: str) -> Path:
+    return cache_dir / (_cache_key(uri) + ".json")
+
+
+def get(uri: str, ttl: int = DEFAULT_TTL, cache_dir: Path = DEFAULT_CACHE_DIR) -> Optional[dict]:
+    """Return cached stack data for uri if present and not expired, else None."""
+    path = _cache_path(cache_dir, uri)
+    if not path.exists():
+        return None
+    try:
+        data = json.loads(path.read_text())
+        if time.time() - data["ts"] > ttl:
+            path.unlink(missing_ok=True)
+            return None
+        return data["payload"]
+    except (KeyError, json.JSONDecodeError) as exc:
+        raise CacheError(f"Corrupt cache entry for {uri}: {exc}") from exc
+
+
+def put(uri: str, payload: dict, cache_dir: Path = DEFAULT_CACHE_DIR) -> None:
+    """Write stack data to cache."""
+    try:
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        path = _cache_path(cache_dir, uri)
+        path.write_text(json.dumps({"ts": time.time(), "payload": payload}))
+    except OSError as exc:
+        raise CacheError(f"Failed to write cache for {uri}: {exc}") from exc
+
+
+def invalidate(uri: str, cache_dir: Path = DEFAULT_CACHE_DIR) -> bool:
+    """Remove a cached entry. Returns True if something was removed."""
+    path = _cache_path(cache_dir, uri)
+    if path.exists():
+        path.unlink()
+        return True
+    return False
+
+
+def clear(cache_dir: Path = DEFAULT_CACHE_DIR) -> int:
+    """Remove all cache entries. Returns count removed."""
+    if not cache_dir.exists():
+        return 0
+    removed = 0
+    for entry in cache_dir.glob("*.json"):
+        entry.unlink()
+        removed += 1
+    return removed
