@@ -66,6 +66,13 @@ def test_include_and_exclude_same_pattern_returns_empty():
     assert result == {}
 
 
+def test_filter_keys_empty_stack():
+    """filter_keys on an empty dict should always return an empty dict."""
+    assert filter_keys({}) == {}
+    assert filter_keys({}, include=["App*"]) == {}
+    assert filter_keys({}, exclude=["*"]) == {}
+
+
 def test_apply_filters_symmetric():
     baseline = {"AppVersion": "1.0", "DbHost": "db1"}
     target = {"AppVersion": "2.0", "DbHost": "db2"}
@@ -80,3 +87,14 @@ def test_apply_filters_exclude_both():
     fb, ft = apply_filters(baseline, target, exclude=["Secret*"])
     assert "SecretKey" not in fb
     assert "SecretKey" not in ft
+
+
+def test_apply_filters_no_filters_returns_copies():
+    """apply_filters with no patterns should return copies of both dicts."""
+    baseline = {"AppVersion": "1.0"}
+    target = {"AppVersion": "2.0"}
+    fb, ft = apply_filters(baseline, target)
+    assert fb == baseline
+    assert ft == target
+    assert fb is not baseline
+    assert ft is not target
