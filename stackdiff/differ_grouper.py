@@ -25,6 +25,10 @@ class GroupedDiffs:
     def total(self) -> int:
         return len(self.changed) + len(self.added) + len(self.removed) + len(self.unchanged)
 
+    def has_differences(self) -> bool:
+        """Return True if any diffs are non-unchanged (i.e. something actually changed)."""
+        return bool(self.changed or self.added or self.removed)
+
     def __str__(self) -> str:
         return (
             f"GroupedDiffs(changed={len(self.changed)}, added={len(self.added)}, "
