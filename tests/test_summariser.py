@@ -65,3 +65,19 @@ def test_only_added():
     assert s.added == 1
     assert s.changed == 0
     assert s.removed == 0
+
+
+def test_counts_sum_to_total(mixed_diffs):
+    """Ensure changed + added + removed + unchanged always equals total."""
+    s = summarise(mixed_diffs)
+    assert s.changed + s.added + s.removed + s.unchanged == s.total
+
+
+def test_counts_sum_to_total_only_unchanged():
+    """Counts should still sum to total when there are no differences."""
+    diffs = [
+        KeyDiff(key="a", baseline="1", target="1"),
+        KeyDiff(key="b", baseline="2", target="2"),
+    ]
+    s = summarise(diffs)
+    assert s.changed + s.added + s.removed + s.unchanged == s.total
