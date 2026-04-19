@@ -66,3 +66,22 @@ def clear(cache_dir: Path = DEFAULT_CACHE_DIR) -> int:
         entry.unlink()
         removed += 1
     return removed
+
+
+def purge_expired(ttl: int = DEFAULT_TTL, cache_dir: Path = DEFAULT_CACHE_DIR) -> int:
+    """Remove all expired cache entries. Returns count removed."""
+    if not cache_dir.exists():
+        return 0
+    removed = 0
+    now = time.time()
+    for entry in cache_dir.glob("*.json"):
+        try:
+            data = json.loads(entry.read_text())
+            if now - data["ts"] > ttl:
+                entry.unlink(missing_ok=True)
+                removed += 1
+        except (KeyError, json.JSONDecodeError, OSError):
+            # Remove unreadable or corrupt entries
+            entry.unlink(missing_ok=True)
+            removed += 1
+    return removed
