@@ -85,3 +85,27 @@ def purge_expired(ttl: int = DEFAULT_TTL, cache_dir: Path = DEFAULT_CACHE_DIR) -
             entry.unlink(missing_ok=True)
             removed += 1
     return removed
+
+
+def stats(cache_dir: Path = DEFAULT_CACHE_DIR, ttl: int = DEFAULT_TTL) -> dict:
+    """Return summary statistics about the cache directory.
+
+    Returns a dict with:
+      - ``total``: total number of cache entries
+      - ``expired``: number of entries that have exceeded the TTL
+      - ``size_bytes``: combined size of all cache files in bytes
+    """
+    if not cache_dir.exists():
+        return {"total": 0, "expired": 0, "size_bytes": 0}
+    total = expired = size_bytes = 0
+    now = time.time()
+    for entry in cache_dir.glob("*.json"):
+        total += 1
+        size_bytes += entry.stat().st_size
+        try:
+            data = json.loads(entry.read_text())
+            if now - data["ts"] > ttl:
+                expired += 1
+        except (KeyError, json.JSONDecodeError, OSError):
+            expired += 1
+    return {"total": total, "expired": expired, "size_bytes": size_bytes}
