@@ -42,6 +42,8 @@ def _resolve_local(path_str: str) -> Path:
     p = Path(path_str)
     if not p.exists():
         raise ResolveError(f"File not found: {path_str!r}")
+    if not p.is_file():
+        raise ResolveError(f"Path is not a file: {path_str!r}")
     return p
 
 
