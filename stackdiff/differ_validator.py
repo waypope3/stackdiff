@@ -96,3 +96,8 @@ def validate_diffs(
             )
         )
     return result
+
+
+def filter_violations(validated: Sequence[ValidatedDiff]) -> List[ValidatedDiff]:
+    """Return only the ValidatedDiff entries that have at least one violation."""
+    return [v for v in validated if v.has_violation]
