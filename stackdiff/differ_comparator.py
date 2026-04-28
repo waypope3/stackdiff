@@ -47,6 +47,15 @@ def _shared_prefix(a: str, b: str) -> str:
 
 
 def _magnitude(baseline: Optional[str], target: Optional[str]) -> str:
+    """Compute the change magnitude between two optional string values.
+
+    Returns one of:
+      - 'added'   : baseline is absent, target is present
+      - 'removed' : baseline is present, target is absent
+      - 'none'    : values are identical
+      - 'minor'   : values differ but share >= 50% prefix similarity
+      - 'major'   : values differ with < 50% prefix similarity
+    """
     if baseline is None:
         return "added"
     if target is None:
@@ -79,3 +88,14 @@ def compare_diffs(diffs: List[KeyDiff]) -> List[ComparedDiff]:
             )
         )
     return result
+
+
+def filter_by_magnitude(diffs: List[ComparedDiff], *magnitudes: str) -> List[ComparedDiff]:
+    """Return only the ComparedDiff entries whose magnitude matches one of the given values.
+
+    Example::
+
+        major_changes = filter_by_magnitude(results, "major", "added", "removed")
+    """
+    allowed = set(magnitudes)
+    return [d for d in diffs if d.magnitude in allowed]
